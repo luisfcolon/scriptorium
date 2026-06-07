@@ -7,6 +7,7 @@ if [[ "${1:-}" == "--help" || "${1:-}" == "-h" ]]; then
   echo ""
   echo "Creates a GitHub repo with:"
   echo "  - main as the default branch"
+  echo "  - auto-delete of head branches after merge"
   echo "  - branch protection (1 required reviewer, dismiss stale reviews)"
   echo ""
   echo "Arguments:"
@@ -44,6 +45,15 @@ gh repo create "$OWNER/$REPO_NAME" \
   --add-readme
 
 echo "[$REPO_NAME] created"
+
+# Enable auto-delete of head branches after merge
+gh api \
+  --method PATCH \
+  "repos/$OWNER/$REPO_NAME" \
+  -f delete_branch_on_merge=true \
+  --silent
+
+echo "[$REPO_NAME] auto-delete head branches enabled"
 
 # Apply branch protection to main
 gh api \
