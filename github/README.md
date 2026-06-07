@@ -50,20 +50,22 @@ Creates a `.github/CODEOWNERS` file in one or more repositories with you as the 
 
 ## create-repo.sh
 
-Creates a new GitHub repository with `main` as the default branch and branch protection enabled.
+Creates a new GitHub repository with branch protection enabled.
 
 **What it does:**
 
 - Creates a public or private repo under your GitHub account
-- Adds a default README
-- Sets `main` as the default branch
-- Applies branch protection: 1 required reviewer, stale review dismissal
-- Optionally creates a `.github/CODEOWNERS` file with you as the owner
+- Adds a default README and a boilerplate `.gitignore`
+- Enables auto-delete of head branches after merge
+- Sets `main` as the default and protected branch (unless `--protect` is used)
+- When `--protect` is used, prompts you to choose the default branch from all protected branches
+- Applies the same branch protection rules to every protected branch: 1 required reviewer, stale review dismissal
+- Optionally creates a `.github/CODEOWNERS` file with you as the owner and enables required code owner reviews on all protected branches
 
 **Usage:**
 
 ```bash
-./create-repo.sh <repo-name> [--private|--public] [--code-owner]
+./create-repo.sh <repo-name> [--private|--public] [--codeowner] [--protect <branch>...] [--no-main]
 ```
 
 **Arguments:**
@@ -71,14 +73,18 @@ Creates a new GitHub repository with `main` as the default branch and branch pro
 - `repo-name` — name of the repository to create
 - `--public` — make the repo public (default)
 - `--private` — make the repo private
-- `--code-owner` — create a `.github/CODEOWNERS` file with you as the owner
+- `--codeowner` — create a `.github/CODEOWNERS` file with you as the owner and require code owner reviews on all protected branches
+- `--protect <name>` — protect an additional branch; repeatable
+- `--no-main` — exclude `main` from protected branches and delete it after creation (requires at least one `--protect`)
 
 **Examples:**
 
 ```bash
 ./create-repo.sh my-repo
 ./create-repo.sh my-repo --private
-./create-repo.sh my-repo --private --code-owner
+./create-repo.sh my-repo --private --codeowner
+./create-repo.sh my-repo --protect develop --protect staging
+./create-repo.sh my-repo --protect edge --protect staging --protect prod --no-main
 ```
 
 ## enable-auto-delete-branches.sh
