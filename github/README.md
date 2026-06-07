@@ -25,18 +25,16 @@ Creates a `.github/CODEOWNERS` file in one or more repositories with you as the 
 - Adds `* @<you>` to `.github/CODEOWNERS`
 - Opens a PR and prints all PR URLs together at the end
 - If a CODEOWNERS file already exists, prompts before overriding
-- `--repo` takes priority if both flags are provided
 
 **Usage:**
 
 ```bash
-./add-codeowners.sh --repo <name> [--repo <name> ...] | --all-repos [--auto-merge]
+./add-codeowners.sh --repo <name> [--repo <name> ...] [--auto-merge]
 ```
 
 **Arguments:**
 
 - `--repo <name>` — repository name, can be specified multiple times
-- `--all-repos` — target all repos in your account
 - `--auto-merge` — merge the PR immediately after creating it
 
 **Examples:**
@@ -44,8 +42,7 @@ Creates a `.github/CODEOWNERS` file in one or more repositories with you as the 
 ```bash
 ./add-codeowners.sh --repo dotfiles
 ./add-codeowners.sh --repo dotfiles --repo scripts
-./add-codeowners.sh --all-repos
-./add-codeowners.sh --all-repos --auto-merge
+./add-codeowners.sh --repo dotfiles --auto-merge
 ```
 
 ## create-repo.sh

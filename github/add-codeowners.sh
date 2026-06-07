@@ -3,28 +3,24 @@
 set -euo pipefail
 
 usage() {
-  echo "Usage: $0 --repo <name> [--repo <name> ...] | --all-repos [--auto-merge]"
+  echo "Usage: $0 --repo <name> [--repo <name> ...] [--auto-merge]"
   echo ""
   echo "Creates a .github/CODEOWNERS file in the specified repos with you as the owner."
-  echo "Opens a PR against the default branch. If both --repo and --all-repos are"
-  echo "provided, --repo takes priority."
+  echo "Opens a PR against the default branch."
   echo ""
   echo "Arguments:"
   echo "  --repo <name>   Repository name (can be specified multiple times)"
-  echo "  --all-repos     Target all repos in your account"
   echo "  --auto-merge    Merge the PR immediately after creating it"
   echo ""
   echo "Examples:"
   echo "  $0 --repo dotfiles"
   echo "  $0 --repo dotfiles --repo scripts"
-  echo "  $0 --all-repos"
-  echo "  $0 --all-repos --auto-merge"
+  echo "  $0 --repo dotfiles --auto-merge"
   echo ""
   exit 1
 }
 
 REPOS=()
-ALL_REPOS=false
 AUTO_MERGE=false
 
 while [[ $# -gt 0 ]]; do
@@ -33,10 +29,6 @@ while [[ $# -gt 0 ]]; do
       [[ -z "${2:-}" ]] && { echo "Error: --repo requires a value"; usage; }
       REPOS+=("$2")
       shift 2
-      ;;
-    --all-repos)
-      ALL_REPOS=true
-      shift
       ;;
     --auto-merge)
       AUTO_MERGE=true
@@ -47,17 +39,13 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-if [[ ${#REPOS[@]} -eq 0 && "$ALL_REPOS" == false ]]; then
-  echo "Error: must provide --repo or --all-repos"
+if [[ ${#REPOS[@]} -eq 0 ]]; then
+  echo "Error: must provide at least one --repo"
   echo ""
   usage
 fi
 
 OWNER=$(gh api user --jq '.login')
-
-if [[ ${#REPOS[@]} -eq 0 ]]; then
-  REPOS=("${(@f)$(gh repo list "$OWNER" --limit 1000 --json name --jq '.[].name')}")
-fi
 
 CONTENT=$(printf '* @%s\n' "$OWNER" | base64)
 BRANCH="chore/add-codeowners"
