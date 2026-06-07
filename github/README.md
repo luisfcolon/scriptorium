@@ -86,17 +86,29 @@ Creates a new GitHub repository with branch protection enabled.
 
 ## enable-auto-delete-branches.sh
 
-Enables the "Automatically delete head branches" setting across all repositories in your GitHub account.
+Enables the "Automatically delete head branches" setting on one or more repositories, or all of them if none are specified.
 
 **What it does:**
 
-- Iterates over all repos (up to 1000) in your account
+- Targets specified repos, or all repos in your account (up to 1000) if no `--repo` flags are given
 - Sets `delete_branch_on_merge` to `true` on each repo
 
 **Usage:**
 
 ```bash
+./enable-auto-delete-branches.sh [--repo <name> ...]
+```
+
+**Arguments:**
+
+- `--repo <name>` — repository name, can be specified multiple times
+
+**Examples:**
+
+```bash
 ./enable-auto-delete-branches.sh
+./enable-auto-delete-branches.sh --repo dotfiles
+./enable-auto-delete-branches.sh --repo dotfiles --repo scripts
 ```
 
 ## migrate-master-to-main.sh
