@@ -18,14 +18,14 @@ gh auth login
 
 ## add-codeowners.sh
 
-Creates a `.github/CODEOWNERS` file in one or more repositories with you as the default owner. Opens a PR against the default branch rather than committing directly.
+Creates a `.github/CODEOWNERS` file in one or more repositories with you as the default owner.
 
 **What it does:**
 
 - Creates a `chore/add-codeowners` branch off the default branch
 - Adds `* @<you>` to `.github/CODEOWNERS`
-- Opens a PR and prints all PR URLs together at the end
-- If a CODEOWNERS file already exists, prompts before overriding
+- Creates one or more PRs and prints all of their URLs together at the end
+- If a CODEOWNERS file already exists, it will prompts to override or ignore
 
 **Usage:**
 
