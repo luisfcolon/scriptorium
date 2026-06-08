@@ -2,45 +2,76 @@
 
 set -euo pipefail
 
-if [[ "${1:-}" == "--help" || "${1:-}" == "-h" ]]; then
-  echo "Usage: $0 <repo-name> [--private|--public] [--codeowner] [--protect <branch>...]"
-  echo ""
-  echo "Creates a GitHub repo with:"
-  echo "  - main as the default branch (or chosen when --protect is used)"
-  echo "  - auto-delete of head branches after merge"
-  echo "  - branch protection (1 required reviewer, dismiss stale reviews)"
-  echo ""
-  echo "Arguments:"
-  echo "  repo-name         Name of the repository to create"
-  echo "  --public          Make the repo public (default)"
-  echo "  --private         Make the repo private"
-  echo "  --codeowner       Create a .github/CODEOWNERS file and require code owner reviews"
-  echo "  --protect <name>  Protect an additional branch (repeatable)"
-  echo "  --no-main         Exclude main from protected branches (requires --protect)"
-  echo ""
-  echo "Examples:"
-  echo "  $0 my-repo"
-  echo "  $0 my-repo --private"
-  echo "  $0 my-repo --private --codeowner"
-  echo "  $0 my-repo --protect develop --protect staging"
-  echo "  $0 my-repo --protect develop --protect staging --protect prod --no-main"
-  exit 0
-fi
+DEFAULT_REPO_CONFIG=$(cat <<'EOF'
+{
+  "delete_branch_on_merge": true
+}
+EOF
+)
 
-REPO_NAME=${1:?Usage: $0 <repo-name> [--private|--public] [--codeowner] [--protect <branch>...]}
+for arg in "$@"; do
+  case "$arg" in
+    --help|-h)
+      echo "Usage: $0 <repo-name> [--private|--public] [--codeowner] [--protect <branch>...] [--config <file>]"
+      echo ""
+      echo "Creates a GitHub repo with:"
+      echo "  - main as the default branch (or chosen when --protect is used)"
+      echo "  - a boilerplate .gitignore"
+      echo "  - branch protection (1 required reviewer, dismiss stale reviews)"
+      echo ""
+      echo "Arguments:"
+      echo "  repo-name                Name of the repository to create"
+      echo "  --public                 Make the repo public (default)"
+      echo "  --private                Make the repo private"
+      echo "  --codeowner              Create a .github/CODEOWNERS file and require code owner reviews"
+      echo "  --protect <name>         Protect an additional branch (repeatable)"
+      echo "  --no-main                Exclude main from protected branches (requires --protect)"
+      echo "  --config <file>          JSON file of repo settings to apply (replaces default config)"
+      echo "  --print-default-config   Print the default repo config and exit"
+      echo ""
+      echo "Examples:"
+      echo "  $0 my-repo"
+      echo "  $0 my-repo --private"
+      echo "  $0 my-repo --private --codeowner"
+      echo "  $0 my-repo --protect develop --protect staging"
+      echo "  $0 my-repo --protect develop --protect staging --protect prod --no-main"
+      echo "  $0 my-repo --config ./my-config.json"
+      exit 0
+      ;;
+    --print-default-config)
+      echo "$DEFAULT_REPO_CONFIG"
+      exit 0
+      ;;
+  esac
+done
+
+REPO_NAME=${1:?Usage: $0 <repo-name> [--private|--public] [--codeowner] [--protect <branch>...] [--config <file>]}
 shift
 
 VISIBILITY="--public"
 CODE_OWNER=false
 NO_MAIN=false
+CONFIG_FILE=""
 EXTRA_BRANCHES=()
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --private)    VISIBILITY="--private" ;;
     --public)     VISIBILITY="--public" ;;
-    --codeowner) CODE_OWNER=true ;;
+    --codeowner)  CODE_OWNER=true ;;
     --no-main)    NO_MAIN=true ;;
+    --config)
+      if [[ $# -lt 2 || "${2:-}" == --* ]]; then
+        echo "Error: --config requires a file path" >&2
+        exit 1
+      fi
+      if [[ ! -f "$2" ]]; then
+        echo "Error: config file not found: $2" >&2
+        exit 1
+      fi
+      CONFIG_FILE="$2"
+      shift
+      ;;
     --protect)
       if [[ $# -lt 2 || "${2:-}" == --* ]]; then
         echo "Error: --protect requires a branch name argument" >&2
@@ -95,14 +126,18 @@ gh api \
 
 echo "[$REPO_NAME] .gitignore created"
 
-# Enable auto-delete of head branches after merge
+REPO_CONFIG="${CONFIG_FILE:+$(cat "$CONFIG_FILE")}"
+REPO_CONFIG="${REPO_CONFIG:-$DEFAULT_REPO_CONFIG}"
+CONFIG_LABEL="${CONFIG_FILE:+$(basename "$CONFIG_FILE")}"
+CONFIG_LABEL="${CONFIG_LABEL:-default}"
+
 gh api \
   --method PATCH \
   "repos/$OWNER/$REPO_NAME" \
-  -f delete_branch_on_merge=true \
+  --input - <<< "$REPO_CONFIG" \
   --silent
 
-echo "[$REPO_NAME] auto-delete head branches enabled"
+echo "[$REPO_NAME] repo settings applied ($CONFIG_LABEL)"
 
 # Create extra branches and set the default if needed
 if [[ ${#EXTRA_BRANCHES[@]} -gt 0 ]]; then
